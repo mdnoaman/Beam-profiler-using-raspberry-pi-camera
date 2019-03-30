@@ -17,7 +17,7 @@ with picamera.PiCamera() as camera:
     time.sleep(0.1)
     camera.iso = 100
     camera.exposure_mode = "off"
-    camera.framerate = 10
+    camera.framerate = 10 # adjust the frame rate according to the shutter speed. such that, 1/framerate > shutter_speed
     camera.shutter_speed = 200  #in microseconds
     g = camera.awb_gains
     camera.awb_mode = 'off'
@@ -36,7 +36,7 @@ offset = {
 
 data = stream.getvalue()[-offset:]
 assert data[:4] == 'BRCM'
-data = data[32768:]
+data = data[32768:]  
 data = np.fromstring(data,dtype=np.uint8)
 
 reshape, crop = {
@@ -49,7 +49,12 @@ data = data.reshape(reshape)[:crop[0], :crop[1]]
 data = data.astype(np.uint16) << 2
 for byte in range(4):
     data[:,byte::5] |= ((data[:,4::5] >> ((4 - byte)*2)) & 0b11)
-data = np.delete(data,np.s_[4::5],1)
+data = np.delete(data,np.s_[4::5],1)   # final data with no Bayer encoding.
+# the pattern should look like as follows:
+# rgrgrgrgrgrg
+# gbgbgbgbgbgb
+# rgrgrgrgrgrg
+# gbgbgbgbgbbg
 
 print(data.shape)
 
@@ -59,7 +64,7 @@ with open('image.data', 'wb') as f:
 
 #%% show image
 from matplotlib import pyplot as plt
-crop_img = data[500:1000,1000:1500]
+crop_img = data[500:1000,1000:1500]  # crop the image for displaying interesting region
 plt.imshow(crop_img, cmap='gray', vmin=0, vmax=1023)
 plt.show()
 
